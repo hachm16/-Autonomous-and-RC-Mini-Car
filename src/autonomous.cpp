@@ -25,11 +25,7 @@ void autonomous::sendDist(float distA, float distB, float distC, float distD) //
 
 bool autonomous::collisionCheck()
 {
-    if (distFront <=7 || distLeft <=7 || distRight<= 7)
-    {
-        delay(500); //give sensors time
-        return true;
-    }
+    if (distFront <=15 || distLeft <=15 || distRight<= 15) return true;
 
     else return false;
 }
@@ -43,6 +39,8 @@ bool autonomous::rearCheck()
         }
 
         else  return false; // if rear not clear, check left and right for turning
+        
+            
         
 } 
 
