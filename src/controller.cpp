@@ -42,44 +42,21 @@ void controller::setTurnValues() // left –32768 to 32767 right
   if (joy <= .2 && joy >= -.2) {leftWheelSpeed = 1; rightWheelSpeed = 1;}
   //straight
 
-  if (joy < -.2 && joy > -.5) // slight left turning
+  if (joy < -.2 && joy >= -1) // slight left turning
   {
-    leftWheelSpeed =  .75;   // ENA
-    rightWheelSpeed = 1;     // ENB
-  }
-
-if (joy <= -.5 && joy > -.75) // regular left turning
-  {
-    leftWheelSpeed =  .5;   // ENA
-    rightWheelSpeed = 1;     // ENB
-  }
-
-  if (joy <= -.75 && joy >= -1 ) // sharp left turning
-  {
-    leftWheelSpeed =  .2;   // ENA
+    leftWheelSpeed =  .1;   // ENA
     rightWheelSpeed = 1;     // ENB
   }
 
 
   // RIGHT TURN JOYSTICK
 
-  if (joy > .2 && joy < .5) // slight right turning
+  if (joy > .2 && joy <=1) // slight right turning
   {
     leftWheelSpeed =  1;   // ENA
-    rightWheelSpeed = .75;     // ENB
+    rightWheelSpeed = .1;     // ENB
   }
 
-if (joy >= .5 && joy < .75) // regular right turning
-  {
-    leftWheelSpeed =  1;   // ENA
-    rightWheelSpeed = .5;     // ENB
-  }
-
-  if (joy > .75 && joy < 1 ) // sharp right turning
-  {
-    leftWheelSpeed =  1;   // ENA
-    rightWheelSpeed = .2;     // ENB
-  }
 }
 
 
