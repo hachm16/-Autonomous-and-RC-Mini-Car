@@ -104,6 +104,8 @@ void setup()
   pinMode(EN_C, OUTPUT);
   pinMode(EN_D, OUTPUT);
 
+  analogWrite(EN_B, 255);
+  analogWrite(EN_A, 255);
   analogWrite(EN_C, 255);
   analogWrite(EN_D, 255);
 
@@ -189,6 +191,7 @@ float getDistance(int triggerPin, int echoPin) {
 void controllerMode()
 {
   int packetSize = udp.parsePacket();
+  static float joy = 0;
   if (packetSize)
   {
       int len = udp.read(udpBuffer, sizeof(udpBuffer) - 1);
@@ -201,40 +204,95 @@ void controllerMode()
       // Update controller object
       myController.LTValue = LT;
       myController.RTValue = RT;
-      myController.joystickValue = LX;
+      joy = LX/32767;
 
-      myController.setTurnValues(); // update wheel speeds based on joystick
 
       static unsigned long lastPrint3 = 0;
-  if (millis() - lastPrint3 >= 1000) { // every 1 second
+    if (millis() - lastPrint3 >= 1000) { // every 1 second
       Serial.print("LT: "); Serial.print(myController.LTValue);
       Serial.print(" RT: "); Serial.print(myController.RTValue);
-      Serial.print(" LX: "); Serial.println(myController.joystickValue);
+      Serial.print(" LX: "); Serial.println(joy);
       Serial.print("\n");
       lastPrint3 = millis();
-    }
+      }
   }
 
-  static unsigned long lastPrint2 = 0;
-  if (millis() - lastPrint2 >= 1000) { // every 1 second
-        Serial.print("right wheel speed: ");
-        Serial.println(myController.rightWheelSpeed*250);
-        Serial.print("leftt wheel speed: ");
-        Serial.println(myController.leftWheelSpeed*250);
-        Serial.print("\n");
-        lastPrint2 = millis();
-  }
-  pwm.write(EN_B, myController.rightWheelSpeed*250);
-  pwm.write(EN_A, myController.leftWheelSpeed*250);
-
-  //1 = rtclicked, 2= ltclicked , 3= none
-  if (myController.getDirectionInput() == 1) forward();
-
-
-  if (myController.getDirectionInput() == 2) backward();
-
-
+  if (joy >= -.2 && joy <= .2 && myController.getDirectionInput() == 1) forward();
+  if (joy >= -.2 && joy <= .2 && myController.getDirectionInput() == 2) backward();
   if (myController.getDirectionInput() == 0) stop();
+
+
+  if (joy < -.2 && joy >= -1 && myController.getDirectionInput() == 1)
+    { // drive forward turn left
+      digitalWrite(frontIN1, LOW);  // left front reverse
+      digitalWrite(frontIN2, HIGH); 
+
+      digitalWrite(frontIN3, HIGH); // right front forward
+      digitalWrite(frontIN4, LOW);
+
+      // rear both forward
+      digitalWrite(rearIN1, HIGH); 
+      digitalWrite(rearIN2, LOW); 
+
+      digitalWrite(rearIN3, HIGH);
+      digitalWrite(rearIN4, LOW);
+
+    }
+
+    if (joy > .2 && joy <= 1 && myController.getDirectionInput() == 1) 
+    { // drive forward turn right
+      digitalWrite(frontIN1, HIGH); // left front forward
+      digitalWrite(frontIN2, LOW);
+
+      digitalWrite(frontIN3, LOW);  // right front reverse
+      digitalWrite(frontIN4, HIGH);
+
+      // rear both forward
+      digitalWrite(rearIN1, HIGH); 
+      digitalWrite(rearIN2, LOW); 
+
+      digitalWrite(rearIN3, HIGH);
+      digitalWrite(rearIN4, LOW);
+    }
+
+
+  if (joy > .2 && joy <= 1 && myController.getDirectionInput() == 2)
+  { // pull backwards to the right
+
+      digitalWrite(frontIN1, LOW); // front left backwards
+      digitalWrite(frontIN2, HIGH);
+
+      digitalWrite(frontIN3, HIGH);  // right front forward
+      digitalWrite(frontIN4, LOW);
+
+      // both rights forward, both lefts backwards, more of an in place turn
+      digitalWrite(rearIN1, LOW); 
+      digitalWrite(rearIN2, HIGH); // rear left back
+
+      digitalWrite(rearIN3, HIGH);
+      digitalWrite(rearIN4, LOW); // rear right forward
+
+
+  }
+
+
+    if (joy < -.2 && joy >= -1 && myController.getDirectionInput() == 2)
+  { // pull backwards to the left
+
+      digitalWrite(frontIN1, HIGH); // front left forward
+      digitalWrite(frontIN2, LOW);
+
+      digitalWrite(frontIN3, LOW);  // right front backwards
+      digitalWrite(frontIN4, HIGH);
+
+      // both lefts forward, both rights backwards, more of an in place turn
+      digitalWrite(rearIN1, HIGH); 
+      digitalWrite(rearIN2, LOW); // rear left forward
+
+      digitalWrite(rearIN3, LOW);
+      digitalWrite(rearIN4, HIGH); // rear right backwards
+    
+  }
 
 
 
@@ -253,8 +311,7 @@ void controllerMode()
 
 void autonomousMode()
 {
-  analogWrite(EN_B, 200);
-  analogWrite(EN_A, 200);
+
   
   distFront = getDistance(triggerFront, echoFront);
   distRear  = getDistance(triggerRear,  echoRear);
@@ -268,6 +325,8 @@ void autonomousMode()
   if (walle.clearForward() == true) forward();
   else
   {
+    stop();
+    delay(1000);
     if (walle.lookBothWays()  == 1) //go left
     {
       digitalWrite(frontIN1, LOW);  // left front reverse
@@ -276,9 +335,9 @@ void autonomousMode()
       digitalWrite(frontIN3, HIGH); // right front forward
       digitalWrite(frontIN4, LOW);
 
-      //rears forward
-      digitalWrite(rearIN1, HIGH); 
-      digitalWrite(rearIN2, LOW); 
+      // same behav as front wheels
+      digitalWrite(rearIN1, LOW); 
+      digitalWrite(rearIN2, HIGH); 
 
       digitalWrite(rearIN3, HIGH);
       digitalWrite(rearIN4, LOW);
@@ -293,12 +352,12 @@ void autonomousMode()
       digitalWrite(frontIN3, LOW);  // right front reverse
       digitalWrite(frontIN4, HIGH);
 
-      //rears forward
+      //same behav as forward
       digitalWrite(rearIN1, HIGH); 
       digitalWrite(rearIN2, LOW); 
 
-      digitalWrite(rearIN3, HIGH);
-      digitalWrite(rearIN4, LOW);
+      digitalWrite(rearIN3, LOW);
+      digitalWrite(rearIN4, HIGH);
 
     }
   }
@@ -309,7 +368,7 @@ void autonomousMode()
     stop();
     delay(500);
 
-    if (walle.rearCheck() == true) backward();
+    if (walle.rearCheck() == true) {backward(); delay(1000);}
     else 
     {  // take clearer route from right and left 
       int LorR = walle.lookBothWays();
